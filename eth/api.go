@@ -25,17 +25,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/miner"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ethzero/go-ethzero/common"
+	"github.com/ethzero/go-ethzero/common/hexutil"
+	"github.com/ethzero/go-ethzero/core"
+	"github.com/ethzero/go-ethzero/core/state"
+	"github.com/ethzero/go-ethzero/core/types"
+	"github.com/ethzero/go-ethzero/log"
+	"github.com/ethzero/go-ethzero/miner"
+	"github.com/ethzero/go-ethzero/params"
+	"github.com/ethzero/go-ethzero/rlp"
+	"github.com/ethzero/go-ethzero/rpc"
+	"github.com/ethzero/go-ethzero/trie"
 )
 
 // PublicEthereumAPI provides an API to access Ethereum full node-related

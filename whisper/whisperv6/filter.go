@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethzero/go-ethzero/common"
+	"github.com/ethzero/go-ethzero/crypto"
+	"github.com/ethzero/go-ethzero/log"
 )
 
 // Filter represents a Whisper message filter

@@ -22,9 +22,9 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/console"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethzero/go-ethzero/cmd/utils"
+	"github.com/ethzero/go-ethzero/console"
+	"github.com/ethzero/go-ethzero/crypto"
 	"gopkg.in/urfave/cli.v1"
 )
 

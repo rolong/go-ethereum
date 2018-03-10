@@ -24,17 +24,17 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/eth"
-	"github.com/ethereum/go-ethereum/eth/downloader"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/ethstats"
-	"github.com/ethereum/go-ethereum/les"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/nat"
-	"github.com/ethereum/go-ethereum/params"
-	whisper "github.com/ethereum/go-ethereum/whisper/whisperv5"
+	"github.com/ethzero/go-ethzero/core"
+	"github.com/ethzero/go-ethzero/eth"
+	"github.com/ethzero/go-ethzero/eth/downloader"
+	"github.com/ethzero/go-ethzero/ethclient"
+	"github.com/ethzero/go-ethzero/ethstats"
+	"github.com/ethzero/go-ethzero/les"
+	"github.com/ethzero/go-ethzero/node"
+	"github.com/ethzero/go-ethzero/p2p"
+	"github.com/ethzero/go-ethzero/p2p/nat"
+	"github.com/ethzero/go-ethzero/params"
+	whisper "github.com/ethzero/go-ethzero/whisper/whisperv5"
 )
 
 // NodeConfig represents the collection of configuration values to fine tune the Geth

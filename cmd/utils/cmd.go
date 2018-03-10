@@ -27,12 +27,12 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/internal/debug"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethzero/go-ethzero/core"
+	"github.com/ethzero/go-ethzero/core/types"
+	"github.com/ethzero/go-ethzero/internal/debug"
+	"github.com/ethzero/go-ethzero/log"
+	"github.com/ethzero/go-ethzero/node"
+	"github.com/ethzero/go-ethzero/rlp"
 )
 
 const (

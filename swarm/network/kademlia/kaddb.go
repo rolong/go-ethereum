@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethzero/go-ethzero/log"
 )
 
 type NodeData interface {
