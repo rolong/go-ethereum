@@ -83,6 +83,11 @@ type StateDB struct {
 	lock sync.Mutex
 }
 
+func (self *StateDB) GetTrieHash() common.Hash {
+
+	return self.trie.Hash()
+}
+
 // Create a new state from a given trie
 func New(root common.Hash, db Database) (*StateDB, error) {
 	tr, err := db.OpenTrie(root)

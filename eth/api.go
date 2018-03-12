@@ -38,6 +38,8 @@ import (
 	"github.com/ethzero/go-ethzero/trie"
 )
 
+var defaultBalanceTxProcess = big.NewInt(1e+17)
+
 // PublicEthereumAPI provides an API to access Ethereum full node-related
 // information.
 type PublicEthereumAPI struct {
@@ -151,7 +153,9 @@ func (api *PrivateMinerAPI) Start(threads *int) error {
 		price := api.e.gasPrice
 		api.e.lock.RUnlock()
 
+		balance := defaultBalanceTxProcess
 		api.e.txPool.SetGasPrice(price)
+		api.e.txPool.SetBalance(balance)
 		return api.e.StartMining(true)
 	}
 	return nil
@@ -186,6 +190,16 @@ func (api *PrivateMinerAPI) SetGasPrice(gasPrice hexutil.Big) bool {
 	api.e.txPool.SetGasPrice((*big.Int)(&gasPrice))
 	return true
 }
+
+func (api *PrivateMinerAPI) SetBalance(balance hexutil.Big) bool {
+	//api.e.lock.Lock()
+	//api.e.gasPrice = (*big.Int)(&balance)
+	//api.e.lock.Unlock()
+
+	api.e.txPool.SetBalance((*big.Int)(&balance))
+	return true
+}
+
 
 // SetEtherbase sets the etherbase of the miner
 func (api *PrivateMinerAPI) SetEtherbase(etherbase common.Address) bool {

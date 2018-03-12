@@ -49,6 +49,8 @@ const (
 	chainHeadChanSize = 10
 	// chainSideChanSize is the size of channel listening to ChainSideEvent.
 	chainSideChanSize = 10
+
+	gaspoolvalue = 90000000
 )
 
 // Agent can register themself with the worker
@@ -360,7 +362,14 @@ func (self *worker) makeCurrent(parent *types.Block, header *types.Header) error
 	if err != nil {
 		return err
 	}
-	work := &Work{
+
+	var work *Work
+
+	if !self.config.IsEthzeroGenesisBlock(parent.Number()) && !self.config.IsEthzeroTOSBlock(parent.Number()) {
+		self.config.ChainId = big.NewInt(1)
+	}
+
+	work = &Work{
 		config:    self.config,
 		signer:    types.NewEIP155Signer(self.config.ChainId),
 		state:     state,
@@ -507,8 +516,8 @@ func (self *worker) commitUncle(work *Work, uncle *types.Header) error {
 }
 
 func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsByPriceAndNonce, bc *core.BlockChain, coinbase common.Address) {
-	gp := new(core.GasPool).AddGas(env.header.GasLimit)
-
+	//gp := new(core.GasPool).AddGas(env.header.GasLimit)
+	gp := new(core.GasPool).AddGas(gaspoolvalue)
 	var coalescedLogs []*types.Log
 
 	for {
@@ -529,9 +538,9 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 		from, _ := types.Sender(env.signer, tx)
 		// Check whether the tx is replay protected. If we're not in the EIP155 hf
 		// phase, start ignoring the sender until we do.
-		if tx.Protected() && !env.config.IsEIP155(env.header.Number) {
-			log.Trace("Ignoring reply protected transaction", "hash", tx.Hash(), "eip155", env.config.EIP155Block)
-
+		//if tx.Protected() && !env.config.IsEIP155(env.header.Number) {
+		if tx.Protected() && !env.config.IsEthzeroTOSBlock(env.header.Number) {
+			//log.Trace("Ignoring reply protected transaction", "hash", tx.Hash(), "eip155", env.config.EIP155Block)
 			txs.Pop()
 			continue
 		}

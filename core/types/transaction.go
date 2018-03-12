@@ -28,6 +28,7 @@ import (
 	"github.com/ethzero/go-ethzero/common/hexutil"
 	"github.com/ethzero/go-ethzero/crypto"
 	"github.com/ethzero/go-ethzero/rlp"
+	"github.com/ethzero/go-ethzero/params"
 )
 
 //go:generate gencodec -type txdata -field-override txdataMarshaling -out gen_tx_json.go
@@ -35,6 +36,11 @@ import (
 var (
 	ErrInvalidSig = errors.New("invalid transaction v, r, s values")
 	errNoSigner   = errors.New("missing signing methods")
+)
+
+const (
+	defaultGas      = 90000
+	defaultGasPrice = 18 * params.Shannon
 )
 
 // deriveSigner makes a *best* guess about which signer to use.
@@ -108,8 +114,15 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 	if amount != nil {
 		d.Amount.Set(amount)
 	}
+
+	if gasLimit == 0 {
+		d.GasLimit = defaultGas
+	}
+
 	if gasPrice != nil {
 		d.Price.Set(gasPrice)
+	}else{
+		d.Price.Set(big.NewInt(defaultGasPrice))
 	}
 
 	return &Transaction{data: d}
@@ -252,8 +265,10 @@ func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, e
 }
 
 // Cost returns amount + gasprice * gaslimit.
+// Cost returns amount + defaultGasPrice * defaultGas.
 func (tx *Transaction) Cost() *big.Int {
-	total := new(big.Int).Mul(tx.data.Price, new(big.Int).SetUint64(tx.data.GasLimit))
+	// total := new(big.Int).Mul(tx.data.Price, new(big.Int).SetUint64(tx.data.GasLimit))
+	total := new(big.Int).Mul(big.NewInt(defaultGasPrice), big.NewInt(defaultGas))
 	total.Add(total, tx.data.Amount)
 	return total
 }
@@ -407,6 +422,10 @@ func NewTransactionsByPriceAndNonce(signer Signer, txs map[common.Address]Transa
 		heads:  heads,
 		signer: signer,
 	}
+}
+
+func (t *TransactionsByPriceAndNonce) Size() int {
+	return len(t.txs)
 }
 
 // Peek returns the next transaction by price.

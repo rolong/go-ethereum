@@ -387,6 +387,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 
 	defer d.Cancel() // No matter what, we can't leave the cancel channel open
 
+	originMode := d.mode
 	// Set the requested sync mode, unless it's forbidden
 	d.mode = mode
 
@@ -395,12 +396,12 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 	if p == nil {
 		return errUnknownPeer
 	}
-	return d.syncWithPeer(p, hash, td)
+	return d.syncWithPeer(p, hash, td, originMode)
 }
 
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
-func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.Int) (err error) {
+func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.Int, mode SyncMode) (err error) {
 	d.mux.Post(StartEvent{})
 	defer func() {
 		// reset on error
@@ -447,12 +448,16 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 			if pivot <= origin {
 				origin = pivot - 1
 			}
+			if mode == FullSync && pivot > params.MainnetChainConfig.EthzeroBlock.Uint64() {
+				pivot = params.MainnetChainConfig.EthzeroBlock.Uint64()
+			}
 		}
 	}
 	d.committed = 1
 	if d.mode == FastSync && pivot != 0 {
 		d.committed = 0
 	}
+	log.Info("syncWithPeer", "d.mode", d.mode, "mode", mode, "pivot", pivot, "origin", origin, "height", height)
 	// Initiate the sync using a concurrent header and content retrieval algorithm
 	d.queue.Prepare(origin+1, d.mode)
 	if d.syncInitHook != nil {

@@ -18,7 +18,7 @@ package core
 
 import (
 	"errors"
-	"math"
+	"github.com/ethzero/go-ethzero/common/math"
 	"math/big"
 
 	"github.com/ethzero/go-ethzero/common"
@@ -28,7 +28,16 @@ import (
 )
 
 var (
+	defaultGasPrice     = big.NewInt(18e+9)
+	etzDefaultGas       = big.NewInt(90000)
+	miniDefaultGasPrice = big.NewInt(21000)
+	etzBalanceGasPrice  = big.NewInt(900)
+	expMinimumGasLimit  = big.NewInt(4712388)
+
+	Big0                         = big.NewInt(0)
 	errInsufficientBalanceForGas = errors.New("insufficient balance to pay for gas")
+	errInsufficientStakeForGas   = errors.New("insufficient Stake to pay for gas")
+
 )
 
 /*
@@ -165,6 +174,36 @@ func (st *StateTransition) useGas(amount uint64) error {
 	return nil
 }
 
+func (st *StateTransition) buyEtzerGas() error {
+
+	mgas := st.msg.Gas()
+
+	mgval := new(big.Int).Mul(new(big.Int).SetUint64(mgas), defaultGasPrice)
+	var (
+		state  = st.state
+		sender = st.from()
+	)
+
+	balance := state.GetBalance(sender.Address())
+	if balance.Cmp(mgval) < 0 {
+		return errInsufficientBalanceForGas
+	}
+	balance = new(big.Int).Div(balance, big.NewInt(1e+16))
+	maxGasLimit := (new(big.Int).Mul(balance, etzBalanceGasPrice))
+	maxGasLimit.Add(expMinimumGasLimit, maxGasLimit)
+
+	if err := st.gp.SubGas(mgas); err != nil {
+		return err
+	}
+	st.gas += mgas
+	st.initialGas = mgas
+
+	if maxGasLimit.Cmp(new(big.Int).SetUint64(st.initialGas)) < 0 {
+		return errInsufficientStakeForGas
+	}
+	return nil
+}
+
 func (st *StateTransition) buyGas() error {
 	var (
 		state  = st.state
@@ -197,6 +236,9 @@ func (st *StateTransition) preCheck() error {
 			return ErrNonceTooLow
 		}
 	}
+	if st.evm.ChainConfig().IsEthzeroTOSBlock(st.evm.BlockNumber) {
+		return st.buyEtzerGas()
+	}
 	return st.buyGas()
 }
 
@@ -214,14 +256,11 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	contractCreation := msg.To() == nil
 
 	// Pay intrinsic gas
-	gas, err := IntrinsicGas(st.data, contractCreation, homestead)
+	// TODO convert to uint64
+	intrinsicGas, err := IntrinsicGas(st.data, contractCreation, homestead)
 	if err != nil {
 		return nil, 0, false, err
 	}
-	if err = st.useGas(gas); err != nil {
-		return nil, 0, false, err
-	}
-
 	var (
 		evm = st.evm
 		// vm errors do not effect consensus and are therefor
@@ -229,6 +268,15 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		// error.
 		vmerr error
 	)
+
+	if evm.ChainConfig().IsEthzeroTOSBlock(st.evm.BlockNumber) && st.gas < intrinsicGas {
+		st.gas = intrinsicGas
+	}
+
+	if err = st.useGas(intrinsicGas); err != nil {
+		return nil, 0, false, err
+	}
+
 	if contractCreation {
 		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
 	} else {
@@ -245,8 +293,16 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 			return nil, 0, false, vmerr
 		}
 	}
-	st.refundGas()
-	st.state.AddBalance(st.evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
+
+	if !evm.ChainConfig().IsEthzeroTOSBlock(st.evm.BlockNumber) {
+		st.refundGas()
+		st.state.AddBalance(st.evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
+	} else {
+		st.refundEtzGas()
+	}
+	if evm.ChainConfig().IsEthzero(st.evm.BlockNumber) {
+		return ret, 0, vmerr != nil, err
+	}
 
 	return ret, st.gasUsed(), vmerr != nil, err
 }
@@ -264,6 +320,22 @@ func (st *StateTransition) refundGas() {
 
 	remaining := new(big.Int).Mul(new(big.Int).SetUint64(st.gas), st.gasPrice)
 	st.state.AddBalance(sender.Address(), remaining)
+
+	// Also return remaining gas to the block gas counter so it is
+	// available for the next transaction.
+	st.gp.AddGas(st.gas)
+}
+
+func (st *StateTransition) refundEtzGas() {
+	// Return eth for remaining gas to the sender account,
+	// exchanged at the original rate.
+	//sender := st.from() // err already checked
+	remaining := new(big.Int).Mul(new(big.Int).SetUint64(st.gas), st.gasPrice)
+
+	// Apply refund counter, capped to half of the used gas.
+	uhalf := remaining.Div(new(big.Int).SetUint64(st.gasUsed()), common.Big2)
+	refund := math.BigMin(uhalf, new(big.Int).SetUint64(st.state.GetRefund()))
+	st.gas += refund.Uint64()
 
 	// Also return remaining gas to the block gas counter so it is
 	// available for the next transaction.
