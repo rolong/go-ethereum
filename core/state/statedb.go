@@ -256,7 +256,9 @@ func (self *StateDB) GetCodeHash(addr common.Address) common.Hash {
 func (self *StateDB) GetState(addr common.Address, hash common.Hash) common.Hash {
 	stateObject := self.getStateObject(addr)
 	if stateObject != nil {
-		return stateObject.GetState(self.db, hash)
+		ret := stateObject.GetState(self.db, hash)
+		fmt.Printf("[GetState] %x => %x\n", hash, ret)
+		return ret;
 	}
 	return common.Hash{}
 }

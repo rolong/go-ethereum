@@ -27,6 +27,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto/bn256"
 	"github.com/ethereum/go-ethereum/params"
 	"golang.org/x/crypto/ripemd160"
+	"crypto/ecdsa"
 )
 
 // PrecompiledContract is the basic interface for native Go contracts. The implementation
@@ -57,6 +58,7 @@ var PrecompiledContractsByzantium = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{6}): &bn256Add{},
 	common.BytesToAddress([]byte{7}): &bn256ScalarMul{},
 	common.BytesToAddress([]byte{8}): &bn256Pairing{},
+	common.BytesToAddress([]byte{9}): &ecrecoverByPublicKey{},
 }
 
 // RunPrecompiledContract runs and evaluates the output of a precompiled contract.
@@ -357,4 +359,27 @@ func (c *bn256Pairing) Run(input []byte) ([]byte, error) {
 		return true32Byte, nil
 	}
 	return false32Byte, nil
+}
+
+
+type ecrecoverByPublicKey struct{}
+
+func (c *ecrecoverByPublicKey) RequiredGas(input []byte) uint64 {
+	return params.EcrecoverGas
+}
+
+func (c *ecrecoverByPublicKey) Run(input []byte) ([]byte, error) {
+	if len(input) < 64 {
+		return nil, nil
+	}
+	id := input[0:64]
+	p := &ecdsa.PublicKey{Curve: crypto.S256(), X: new(big.Int), Y: new(big.Int)}
+	half := len(id) / 2
+	p.X.SetBytes(id[:half])
+	p.Y.SetBytes(id[half:])
+	if !p.Curve.IsOnCurve(p.X, p.Y) {
+		return nil, nil
+	}
+	addr := crypto.PubkeyToAddress(*p)
+	return common.LeftPadBytes(addr[:], 32), nil
 }
