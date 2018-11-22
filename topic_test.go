@@ -11,11 +11,18 @@ func Test_empty_hash(t *testing.T) {
 }
 
 func Test_03(t *testing.T){
-	var index [64]byte
-	index[31] = 1 // Map元素的KEY值
-	index[63] = 2 // 属性编号
+	// Map元素索引值 = Keccak256( 32字节的元素Key值 + 32字节的属性index )
 
-	hash := common.BytesToHash(crypto.Keccak256(index[:]))
-	fmt.Println("Index: ", common.Bytes2Hex(index[:]))
-	fmt.Println("Key  : ", hash.Hex())
+	var key [32]byte    // 32字节的元素Key值
+	var index [32]byte  // 32字节的属性index
+
+	key[31] = 1
+	index[31] = 1
+
+	elementIndex := append(key[:], index[:]...)
+
+	hash := common.BytesToHash(crypto.Keccak256(elementIndex))
+
+	fmt.Println("elementIndex:", common.Bytes2Hex(elementIndex))
+	fmt.Println("hash: ", hash.Hex())
 }
